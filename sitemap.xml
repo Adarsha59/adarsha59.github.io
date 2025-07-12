@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Homepage -->
+  <url>
+    <loc>https://adarsha59.github.io/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+
+    <!-- Images on homepage -->
+    <image:image>
+      <image:loc>https://adarsha59.github.io/assets/images/aadarsha-paudyal.jpg</image:loc>
+      <image:caption>Aadarsha Paudyal</image:caption>
+    </image:image>
+
+    <image:image>
+      <image:loc>https://adarsha59.github.io/assets/images/adarsha-paudyal-electronics-communication-engineer.jpg</image:loc>
+      <image:caption>Aadarsha Paudyal Electronics Communication Engineer</image:caption>
+    </image:image>
+
+    <image:image>
+      <image:loc>https://adarsha59.github.io/assets/images/adarsha-paudyal-electronic-communications-engineer.jpg</image:loc>
+      <image:caption>Adarsha Paudyal </image:caption>
+    </image:image>
+
+    <image:image>
+      <image:loc>https://adarsha59.github.io/assets/images/adarsha-paudyal-electronic-communication-engineer.jpg</image:loc>
+      <image:caption>Paudyal adarsha</image:caption>
+    </image:image>
+
+  </url>
+
+</urlset>
