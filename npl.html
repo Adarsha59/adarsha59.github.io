@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NPL Live By Adarsha Paudyal</title>
+
+    <!-- Shaka Player -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css"
+      crossorigin="anonymous"
+    />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+        background: #000;
+        font-family: system-ui, -apple-system, sans-serif;
+        overflow: hidden;
+      }
+      .player-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+      }
+      .shaka-spinner-container,
+      .shaka-spinner,
+      .shaka-spinner-svg {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="player-container" data-shaka-player>
+      <video
+        autoplay
+        playsinline
+        preload="metadata"
+        poster="https://dns-tv.pages.dev/logo/image.png"
+      ></video>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        shaka.polyfill.installAll();
+
+        if (!shaka.Player.isBrowserSupported()) {
+          console.error("Browser not supported");
+          return;
+        }
+
+        const video = document.querySelector("video");
+        const player = new shaka.Player();
+        await player.attach(video);
+
+        const container = document.querySelector(".player-container");
+        const ui = new shaka.ui.Overlay(player, container, video);
+        ui.configure({
+          controlPanelElements: [
+            "play_pause",
+            "time_and_duration",
+            "mute",
+            "volume",
+            "spacer",
+            "language",
+            "captions",
+            "picture_in_picture",
+            "quality",
+            "fullscreen",
+          ],
+          volumeBarColors: {
+            base: "rgba(220,20,60,0.3)",
+            level: "rgb(220,20,60)",
+          },
+          seekBarColors: {
+            base: "rgba(255,215,0,0.2)",
+            buffered: "rgba(255,215,0,0.5)",
+            played: "linear-gradient(90deg,#FFD700,#FFA500)",
+          },
+        });
+
+        // Fetch stream URL + DRM config from JSONBin
+        let streamUrl = "";
+        let drmConfig = {};
+        try {
+          const res = await fetch(
+            "https://api.jsonbin.io/v3/b/69201f2fae596e708f66ff6d/latest?meta=false",
+            {
+              headers: {
+                "X-Master-Key":
+                  "$2a$10$wMVeU1jmeaebHj/TWfUxSujCZeGOvBx1Mdtg/.yO.duARE.ucZHP.",
+              },
+            }
+          );
+          const data = await res.json();
+          streamUrl = data.STREAM_URL; // e.g., "https://example.com/live.mpd"
+          drmConfig = data.DRM_CLEAR_KEYS; // e.g., { "keyID1": "keyValue1", "keyID2": "keyValue2" }
+          console.log("Loaded from JSONBin:", streamUrl, drmConfig);
+        } catch (err) {
+          console.error("Failed to fetch JSONBin data, using fallback", err);
+          streamUrl =
+            "https://ottb.live.cf.ww.aiv-cdn.net/lhr-nitro/live/dash/enc/wf8usag51e/out/v1/bd3b0c314fff4bb1ab4693358f3cd2d3/cenc.mpd";
+          drmConfig = {};
+        }
+
+        player.configure({
+          drm: { clearKeys: drmConfig },
+          streaming: {
+            lowLatencyMode: true,
+            bufferingGoal: 15,
+            rebufferingGoal: 2,
+            bufferBehind: 15,
+            retryParameters: {
+              timeout: 10000,
+              maxAttempts: 5,
+              baseDelay: 300,
+              backoffFactor: 1.2,
+            },
+            segmentPrefetchLimit: 2,
+            useNativeHlsOnSafari: true,
+          },
+          manifest: { retryParameters: { timeout: 8000, maxAttempts: 3 } },
+        });
+
+        // Autoplay
+        const enableAutoplay = () => {
+          video.autoplay = true;
+          video.playsInline = true;
+        };
+        const attemptAutoplay = async () => {
+          try {
+            video.muted = false;
+            await video.play();
+          } catch {
+            try {
+              video.muted = true;
+              await video.play();
+            } catch {}
+          }
+        };
+
+        // Events
+        player.addEventListener("error", (e) =>
+          console.error("Shaka Player Error:", e.detail)
+        );
+        video.addEventListener(
+          "play",
+          () => {
+            if (
+              window.self === window.top &&
+              !document.fullscreenElement &&
+              window.innerWidth <= 768
+            )
+              container.requestFullscreen().catch(() => {});
+          },
+          { once: true }
+        );
+        video.addEventListener("loadedmetadata", () => (video.volume = 0.8));
+        ["click", "touchstart", "keydown"].forEach((e) =>
+          document.addEventListener(
+            e,
+            () => {
+              if (video.muted) video.muted = false;
+            },
+            { once: true }
+          )
+        );
+
+        try {
+          enableAutoplay();
+          await player.load(streamUrl);
+        } catch (e) {
+          console.error("Load error:", e);
+        }
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden && video.paused) attemptAutoplay();
+        });
+      });
+    </script>
+  </body>
+</html>
